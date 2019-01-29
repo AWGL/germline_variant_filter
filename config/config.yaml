@@ -22,6 +22,7 @@ to_keep_consequences:
                'incomplete_terminal_codon_variant': 'incomplete_terminal_codon_variant'
                'start_retained_variant': 'start_retained_variant'
                'stop_retained_variant': 'stop_retained_variant'
+               'synonymous_variant': 'synonymous_variant'
 
 
 consequence_severity: ['transcript_ablation','splice_acceptor_variant','splice_donor_variant','stop_gained','frameshift_variant','stop_lost','start_lost','transcript_amplification','inframe_insertion','inframe_deletion','missense_variant','protein_altering_variant','splice_region_variant','incomplete_terminal_codon_variant','start_retained_variant','stop_retained_variant','synonymous_variant','coding_sequence_variant','mature_miRNA_variant','5_prime_UTR_variant','3_prime_UTR_variant','non_coding_transcript_exon_variant','intron_variant','NMD_transcript_variant','non_coding_transcript_variant','upstream_gene_variant','downstream_gene_variant','TFBS_ablation','TFBS_amplification','TF_binding_site_variant','regulatory_region_ablation','regulatory_region_amplification','feature_elongation','regulatory_region_variant','feature_truncation','intergenic_variant']
@@ -45,3 +46,33 @@ min_parental_gq_uid: 20
 
 # Time in days if data in local panel app dump older than this then query API
 panel_app_dump_max_time: 100.0
+
+# Cutoffs for the different workflows
+other_gnomadg: 0.01
+other_gnomade: 0.01
+
+comp_het_gnomadg: 0.01
+comp_het_gnomade: 0.01
+
+upi_gnomadg: 0.01
+upi_gnomade: 0.01
+
+rec_sex_gnomadg: 0.01
+rec_sex_gnomade: 0.01
+rec_sex_ac: 8
+
+rec_auto_gnomadg: 0.01
+rec_auto_gnomade: 0.01
+rec_auto_ac: 4
+
+dom_sex_gnomadg: 0.0075
+dom_sex_gnomade: 0.001
+dom_sex_ac: 6
+
+dom_auto_gnomadg: 0.0075
+dom_auto_gnomade: 0.001
+dom_auto_ac: 4
+
+de_novo_gnomadg: 0.0075
+de_novo_gnomade: 0.001
+de_novo_ac: 4

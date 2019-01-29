@@ -471,7 +471,7 @@ def get_panel_app_info(gene):
 		
 		return None, None
 
-def apply_panel_app_data(df, panel_app_dict, panel_app_dump_max_time):
+def apply_panel_app_data_disease(df, panel_app_dict, panel_app_dump_max_time):
 	"""
 	Get the panel app data for each row in the dataframe.
 
@@ -504,6 +504,41 @@ def apply_panel_app_data(df, panel_app_dict, panel_app_dump_max_time):
 	print (symbol)
 		
 	return panel_app_dict[symbol]['disease']
+
+
+def apply_panel_app_data_inheritance(df, panel_app_dict, panel_app_dump_max_time):
+	"""
+	Get the panel app data for each row in the dataframe.
+
+	"""
+	
+	symbol = df['SYMBOL']
+	
+	if symbol in panel_app_dict:
+
+		today = datetime.datetime.now()
+
+		last_analyzed = panel_app_dict[symbol]['date']
+
+		last_analyzed = last_analyzed.split(' ')[0].split('-')
+
+		last_analyzed = datetime.datetime(int(last_analyzed[0]), int(last_analyzed[1]), int(last_analyzed[2]))
+
+		difference = today - last_analyzed
+
+		if difference.days < panel_app_dump_max_time:
+		
+			return panel_app_dict[symbol]['inheritance']
+	
+	diseases, inheritance = get_panel_app_info(symbol)
+		
+	date = datetime.datetime.now()
+		
+	panel_app_dict[symbol] = {'disease': diseases, 'inheritance': inheritance, 'date': str(date)}
+
+	print (symbol)
+		
+	return panel_app_dict[symbol]['inheritance']
 
 
 def parse_hpo_file(hpo_file):
