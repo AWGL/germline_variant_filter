@@ -244,7 +244,7 @@ def annotate_workflow_trio(df,sample, mother, father, sample_sex, compound_het_d
 				
 				workflows.append('RECCESSIVE_SEX')
 				
-		if is_high_confidence_de_novo(chrom, ref, alt, sample_gt,mother_gt, father_gt,mother_dp,father_dp,mother_gq,father_gq, min_parental_depth_dn, min_parental_gq_dn) == True:
+		if is_high_confidence_de_novo(chrom, ref, alt, sample_gt, mother_gt, father_gt,mother_dp,father_dp,mother_gq,father_gq, min_parental_depth_dn, min_parental_gq_dn) == True:
 				
 				workflows.append('DENOVO_HC')
 				
@@ -259,6 +259,10 @@ def annotate_workflow_trio(df,sample, mother, father, sample_sex, compound_het_d
 		if len(workflows) == 0:
 				
 				workflows.append('OTHER')
+
+		if 'DENOVO_HC' in workflows and 'DENOVO_LC' in workflows:
+
+			workflows.remove('DENOVO_LC')
 				
 		return '|'.join(workflows)
 

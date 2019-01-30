@@ -19,11 +19,15 @@ csq_desc = 'Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|E
 csq_desc = csq_desc.split('|')
 
 parse_splice_ai = True
-smart_synonymous_filtering = False
+smart_synonymous_filtering = True
 add_ccrs = True
 add_gnomad_constaint_scores = True
 add_panel_app_info = True
 use_local_panel_app_dump = True
+add_hpo = True
+worksheet = '180126_D00501_0177_BH2LC7BCX2'
+hpo_file = '../ALL_SOURCES_ALL_FREQUENCIES_genes_to_phenotype.txt'
+patient_hpos = '../hpo_terms.csv'
 
 ########################################################################################################################################################
 # Parse Config files
@@ -41,6 +45,10 @@ splice_ai_cutoff = config_dict['splice_ai_cutoff']
 consequence_severity = config_dict['consequence_severity']
 clin_sig_words = config_dict['clin_sig_words']
 to_keep_consequences = config_dict['to_keep_consequences']
+
+
+min_dp = config_dict['min_dp']
+min_gq = config_dict['min_gq']
 
 min_parental_depth_dn = config_dict['min_parental_depth_dn']
 min_parental_gq_dn = config_dict['min_parental_gq_dn']
@@ -106,6 +114,20 @@ if add_panel_app_info == True:
 
 		panel_app_dict = {}
 
+if add_hpo == True:
+
+	hpo_dict = parse_hpo_file(hpo_file)
+
+	try:
+
+		patient_hpos = pd.read_csv(patient_hpos, sep='\t').to_dict(orient='list')
+
+	except:
+
+		print('Could not read patient HPO file.')
+
+
+
 ########################################################################################################################################################
 # Main Program
 ########################################################################################################################################################
@@ -118,7 +140,7 @@ df = df[df['FILTER'] == 'PASS']
 
 # For each sample in the PED file create a column which specifies whether the variant is relevant for that sample
 for sample in samples:
-	df[sample + '_is_relevant'] = df.apply(select_variants_for_sample, args=(sample,), axis=1)
+	df[sample + '_is_relevant'] = df.apply(select_variants_for_sample, args=(sample,min_dp, min_gq), axis=1)
 
 # Fix column names
 df.columns = fix_column_names(df.columns)
@@ -126,6 +148,8 @@ df.columns = fix_column_names(df.columns)
 # Parse CSQ data - putting each consequence block on its own line.
 vep_df = split_vep_transcripts(df, csq_desc, vep_fields, list(df.columns))
 
+
+#vep_df.to_csv('all_unfiltered.csv', sep='\t')
 
 ########################################################################################################################################################
 # Initial Frequency Filter
@@ -135,13 +159,18 @@ vep_df = split_vep_transcripts(df, csq_desc, vep_fields, list(df.columns))
 vep_df['gnomADg_AF_POPMAX'] = pd.to_numeric(vep_df['gnomADg_AF_POPMAX'])
 vep_df['gnomADe_AF_POPMAX'] = pd.to_numeric(vep_df['gnomADe_AF_POPMAX'])
 
+
+vep_df.fillna(value = {'gnomADg_AF_POPMAX':0.0, 'gnomADe_AF_POPMAX':0.0}, inplace=True)
+
 # Filter on gnomad genomes and exomes - if data is missing or we have less than largest cutoff  e.g. (1%)
 vep_df = vep_df[((vep_df['gnomADg_AF_POPMAX'] <= default_cutoff_gnomad_genomes) | (pd.isna(vep_df['gnomADg_AF_POPMAX']) )) &
 			   ((vep_df['gnomADe_AF_POPMAX'] <= default_cutoff_gnomad_exomes ) | (pd.isna(vep_df['gnomADe_AF_POPMAX'])))]
 
 
 # Also create the variant key e.g.12:12345A>G
-vep_df['variant'] = vep_df.apply(get_variant_key,axis=1)
+vep_df['VariantId'] = vep_df.apply(get_variant_key,axis=1)
+
+
 
 ########################################################################################################################################################
 # Process SpliceAI columns if requested
@@ -151,25 +180,25 @@ if parse_splice_ai == True:
 
 	# Apply fix for splice AI columns
 
-	vep_df['fixed_SpliceAI_DS_AG'] = vep_df.apply(fix_splice_ai, axis=1, args=('SpliceAI_DS_AG',))
-	vep_df['fixed_SpliceAI_DS_AL'] = vep_df.apply(fix_splice_ai, axis=1, args=('SpliceAI_DS_AL',))
-	vep_df['fixed_SpliceAI_DS_DG'] = vep_df.apply(fix_splice_ai, axis=1, args=('SpliceAI_DS_DG',))
-	vep_df['fixed_SpliceAI_DS_DL'] = vep_df.apply(fix_splice_ai, axis=1, args=('SpliceAI_DS_DL',))
+	vep_df['SpliceAI_DS_AG'] = vep_df.apply(fix_splice_ai, axis=1, args=('SpliceAI_DS_AG',))
+	vep_df['SpliceAI_DS_AL'] = vep_df.apply(fix_splice_ai, axis=1, args=('SpliceAI_DS_AL',))
+	vep_df['SpliceAI_DS_DG'] = vep_df.apply(fix_splice_ai, axis=1, args=('SpliceAI_DS_DG',))
+	vep_df['SpliceAI_DS_DL'] = vep_df.apply(fix_splice_ai, axis=1, args=('SpliceAI_DS_DL',))
 
-	vep_df['fixed_SpliceAI_DS_AG'] = pd.to_numeric(vep_df['fixed_SpliceAI_DS_AG'])
-	vep_df['fixed_SpliceAI_DS_AL'] = pd.to_numeric(vep_df['fixed_SpliceAI_DS_AL'])
-	vep_df['fixed_SpliceAI_DS_DG'] = pd.to_numeric(vep_df['fixed_SpliceAI_DS_DG'])
-	vep_df['fixed_SpliceAI_DS_DL'] = pd.to_numeric(vep_df['fixed_SpliceAI_DS_DL'])
+	vep_df['SpliceAI_DS_AG'] = pd.to_numeric(vep_df['SpliceAI_DS_AG'])
+	vep_df['SpliceAI_DS_AL'] = pd.to_numeric(vep_df['SpliceAI_DS_AL'])
+	vep_df['SpliceAI_DS_DG'] = pd.to_numeric(vep_df['SpliceAI_DS_DG'])
+	vep_df['SpliceAI_DS_DL'] = pd.to_numeric(vep_df['SpliceAI_DS_DL'])
 
 	vep_df['has_affect_on_splicing'] = vep_df.apply(has_affect_on_splicing, axis=1, args=(splice_ai_cutoff,))
-	vep_df['any_has_splicing_affect'] = vep_df.groupby('variant')['has_affect_on_splicing'].transform(any_has_splicing_affect)
+	vep_df['any_has_splicing_affect'] = vep_df.groupby('VariantId')['has_affect_on_splicing'].transform(any_has_splicing_affect)
 
 ########################################################################################################################################################
 # Consequence Filtering
 ########################################################################################################################################################
 
 # Get worst consequence (in any feature)
-vep_df['worst_consequence'] = vep_df.groupby('variant')['Consequence'].transform(get_worst_consequence, consequence_severity)
+vep_df['WorstConsequence'] = vep_df.groupby('VariantId')['Consequence'].transform(get_worst_consequence, consequence_severity)
 
 # Has the variant got a relevant clinical consequence e.g. Pathogenic?
 vep_df['has_important_clinsig'] = vep_df.apply(has_important_clinsig, axis=1, args=(clin_sig_words,))
@@ -180,10 +209,10 @@ vep_df['consequence_filter'] = vep_df.apply(consequence_filter, axis=1, args=(to
 if smart_synonymous_filtering == True:
 
 	# TODO: Add check whether we have the data for this!
-	vep_df = vep_df[(vep_df['consequence_filter'] == False) | ((vep_df['worst_consequence'] == 'synonymous_variant') & ((vep_df['has_important_clinsig'] == True) | (vep_df['has_affect_on_splicing'] == True))) ]
+	vep_df = vep_df[(vep_df['consequence_filter'] == False) | ((vep_df['WorstConsequence'] == 'synonymous_variant') & ((vep_df['has_important_clinsig'] == True) | (vep_df['has_affect_on_splicing'] == True))) ]
 
 else:
-	print ('trad')
+
 	vep_df = vep_df[(vep_df['consequence_filter'] == False)]
 
 
@@ -233,29 +262,29 @@ for sample in samples:
 	compound_het_dict[None] = 0
 
 	# Seperate workflows for trios and single samples
-	if is_proband_in_trio == True:
+	if proband_in_trio == True:
 
 		mother = ped_dict[sample]['maternalID']
 		father = ped_dict[sample]['paternalID']
 
-		sample_df['workflow'] = sample_df.apply(annotate_workflow_trio, axis=1, args=(sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid))
+		sample_df['Workflow'] = sample_df.apply(annotate_workflow_trio, axis=1, args=(sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid))
 
 	else:
 
-		sample_df['workflow'] = sample_df.apply(annotate_workflow_single, axis=1, args=(sample, sample_sex, compound_het_dict))
+		sample_df['Workflow'] = sample_df.apply(annotate_workflow_single, axis=1, args=(sample, sample_sex, compound_het_dict))
 
 
 	# Filter on least restrictive workflow
 
 	wf_restrictiveness = ['OTHER', 'UNIPARENTAL_ISODISOMY', 'COMPOUND_HET', 'RECCESSIVE_SEX', 'RECESSIVE_AUTOSOMAL', 'DOMINANT_SEX', 'DOMINANT_AUTOSOMAL', 'DENOVO_HC', 'DENOVO_LC' ]
 
-	workflows = list(sample_df['workflow'].value_counts().index)
+	workflows = list(sample_df['Workflow'].value_counts().index)
 
 	master_sample_df = pd.DataFrame(columns =sample_df.columns)
 
 	for workflow in workflows:
 		
-		workflow_df = sample_df[sample_df['workflow'] == workflow]
+		workflow_df = sample_df[sample_df['Workflow'] == workflow]
 		
 		workflow_list = workflow.split('|')
 		
@@ -327,7 +356,7 @@ for sample in samples:
 			
 		master_sample_df = pd.concat([master_sample_df, workflow_df])
 
-	print (f"{sample} INFO: Variants remaining after filtering: {master_sample_df.groupby('variant').count().shape[0]}")
+	print (f"{sample} INFO: Variants remaining after filtering: {master_sample_df.groupby('VariantId').count().shape[0]}")
 
 	# If we want to add the constrained coding regions then do that.
 	if add_ccrs == True:
@@ -345,11 +374,58 @@ for sample in samples:
 	# Add gene information from panel app
 	if add_panel_app_info == True:
 
-		master_sample_df['disease'] = master_sample_df.apply(apply_panel_app_data_disease, axis=1,args =(panel_app_dict,panel_app_dump_max_time,))
-		master_sample_df['inheritance'] = master_sample_df.apply(apply_panel_app_data_inheritance, axis=1,args =(panel_app_dict,panel_app_dump_max_time,))
+		master_sample_df['DiseaseName'] = master_sample_df.apply(apply_panel_app_data_disease, axis=1,args =(panel_app_dict,panel_app_dump_max_time,))
+		master_sample_df['ModeOfInheritance'] = master_sample_df.apply(apply_panel_app_data_inheritance, axis=1,args =(panel_app_dict,panel_app_dump_max_time,))
+
+	if add_hpo == True:
+
+		print (patient_hpos)
+
+		if sample in patient_hpos:
+
+			master_sample_df['HPOCount'] = master_sample_df.apply(annotate_hpo, axis=1,args=(patient_hpos[sample], hpo_dict))
+
+		else:
+			master_sample_df['HPOCount'] = 'NA'
+			print (f'{sample} INFO: No HPO terms in file for this sample.')
 
 
-	print (master_sample_df[['variant', 'SYMBOL']].head())
+	# Process CSV for saving to cs
+
+	master_sample_df['SampleId'] = sample
+	master_sample_df['RunId'] = worksheet
+	master_sample_df['Genotype'] = master_sample_df.apply(get_genotype, axis=1, args=(sample,))
+	master_sample_df['Proband'] = master_sample_df['sample_' + sample + '_GT']
+
+	if proband_in_trio == True:
+
+		master_sample_df['Father'] = master_sample_df['sample_' + father + '_GT']
+		master_sample_df['Mother'] = master_sample_df['sample_' + mother + '_GT']
+
+	master_sample_df['Gene'] = master_sample_df['SYMBOL']
+	master_sample_df['Transcript'] = master_sample_df['Feature']
+	master_sample_df['Exon'] = master_sample_df.apply(fix_exon, axis=1)
+	master_sample_df['Intron'] = master_sample_df.apply(fix_intron, axis=1)
+	master_sample_df['HGVSc'] = master_sample_df.apply(get_hgvsc, axis=1)
+	master_sample_df['HGVSp'] = master_sample_df.apply(get_hgvsp, axis=1)
+
+
+
+
+	if proband_in_trio == True:
+
+		with open(f'results/{sample}.csv', 'w') as f:
+			f.write(f'#Variant Germline Filter|Proband={sample}|father={father}|mother={mother}\n')
+
+		master_sample_df[['SampleId', 'RunId', 'Workflow', 'VariantId', 'Genotype', 'Proband', 'Father', 'Mother', 'Gene', 'Transcript', 'HGVSc', 'HGVSp', 'Existing_variation', 'Consequence', 'WorstConsequence',  'gnomADg_AF_POPMAX','gnomADe_AF_POPMAX', 'Exon', 'Intron', 'DiseaseName','ModeOfInheritance', 'SIFT', 'PolyPhen',  'CLIN_SIG' , 'CCR_percentile', 'pLI', 'SpliceAI_DS_AG', 'SpliceAI_DS_AL', 'SpliceAI_DS_DG', 'SpliceAI_DS_DL', 'HPOCount', 'PICK']].to_csv(f'results/{sample}.csv', sep='\t', float_format='%.6f', mode='a', index=False)
+
+	else:
+
+		with open(f'results/{sample}.csv', 'w') as f:
+			f.write(f'#Variant Germline Filter|Proband={sample}\n')
+
+		master_sample_df[['SampleId', 'RunId', 'Workflow', 'VariantId', 'Genotype', 'Proband', 'Gene', 'Transcript',  'HGVSc', 'HGVSp', 'Existing_variation', 'Consequence', 'WorstConsequence',  'gnomADg_AF_POPMAX','gnomADe_AF_POPMAX', 'Exon', 'Intron', 'DiseaseName','ModeOfInheritance', 'SIFT', 'PolyPhen',  'CLIN_SIG', 'CCR_percentile', 'pLI', 'SpliceAI_DS_AG', 'SpliceAI_DS_AL', 'SpliceAI_DS_DG', 'SpliceAI_DS_DL', 'HPOCount',  'PICK']].to_csv(f'results/{sample}.csv', sep='\t', float_format='%.6f', mode='a', index=False)
+
 
 
 if use_local_panel_app_dump:

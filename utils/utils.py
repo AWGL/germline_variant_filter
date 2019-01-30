@@ -72,7 +72,7 @@ def is_proband_in_trio(sample, ped_dict):
 	return True
 
 
-def select_variants_for_sample(df, sample):
+def select_variants_for_sample(df, sample, min_dp, min_gq):
 	"""
 	Checks whether the variant has not been filtered for that variant.
 	
@@ -104,7 +104,7 @@ def select_variants_for_sample(df, sample):
 		
 		is_variant = True
 		
-	if pd.isna(df[sample + '.FT']) == True or df[sample + '.FT'] == 'PASS':
+	if df[sample + '.GQ'] >= min_gq and df[sample + '.DP'] >= min_dp:
 		
 		passes_filter = True
 		
@@ -283,7 +283,7 @@ def consequence_filter(df, to_keep_consequences):
 	
 	"""
 	
-	if df['worst_consequence'] in to_keep_consequences:
+	if df['WorstConsequence'] in to_keep_consequences:
 		
 		return False
 	
@@ -349,19 +349,19 @@ def has_affect_on_splicing(df, cutoff):
 
 	"""
 	
-	if df['fixed_SpliceAI_DS_AG'] >= cutoff or pd.isna(df['fixed_SpliceAI_DS_AG']):
+	if df['SpliceAI_DS_AG'] >= cutoff or pd.isna(df['SpliceAI_DS_AG']):
 		
 		return True
 	
-	elif df['fixed_SpliceAI_DS_AL'] >= cutoff or pd.isna(df['fixed_SpliceAI_DS_AL']):
+	elif df['SpliceAI_DS_AL'] >= cutoff or pd.isna(df['SpliceAI_DS_AL']):
 		
 		return True
 	
-	elif df['fixed_SpliceAI_DS_DG'] >= cutoff or pd.isna(df['fixed_SpliceAI_DS_DG']):
+	elif df['SpliceAI_DS_DG'] >= cutoff or pd.isna(df['SpliceAI_DS_DG']):
 		
 		return True
 	
-	elif df['fixed_SpliceAI_DS_DL'] >= cutoff or pd.isna(df['fixed_SpliceAI_DS_DL']):
+	elif df['SpliceAI_DS_DL'] >= cutoff or pd.isna(df['SpliceAI_DS_DL']):
 		
 		return True
 	
@@ -500,8 +500,6 @@ def apply_panel_app_data_disease(df, panel_app_dict, panel_app_dump_max_time):
 	date = datetime.datetime.now()
 		
 	panel_app_dict[symbol] = {'disease': diseases, 'inheritance': inheritance, 'date': str(date)}
-
-	print (symbol)
 		
 	return panel_app_dict[symbol]['disease']
 
@@ -511,7 +509,7 @@ def apply_panel_app_data_inheritance(df, panel_app_dict, panel_app_dump_max_time
 	Get the panel app data for each row in the dataframe.
 
 	"""
-	
+
 	symbol = df['SYMBOL']
 	
 	if symbol in panel_app_dict:
@@ -535,8 +533,6 @@ def apply_panel_app_data_inheritance(df, panel_app_dict, panel_app_dump_max_time
 	date = datetime.datetime.now()
 		
 	panel_app_dict[symbol] = {'disease': diseases, 'inheritance': inheritance, 'date': str(date)}
-
-	print (symbol)
 		
 	return panel_app_dict[symbol]['inheritance']
 
@@ -569,5 +565,136 @@ def parse_hpo_file(hpo_file):
 				hpo_dict[row[0]][row[3]] = row[3]
 				
 	return hpo_dict
+
+
+def get_genotype(df, sample):
+
+	"""
+	Return whether the proband gentype is HET or HOM
+
+	"""
+
+	sample_gt = df[f'sample_{sample}_GT']
+	alt = df['ALT']
+
+	if '|' in sample_gt:
+			
+		sample_gt = sample_gt.split('|')
+	
+	elif '/' in sample_gt:
+			
+		sample_gt = sample_gt.split('/')
+			
+	else:
+			
+		raise Exception('There is a sample genotype without either | or / in.')
+
+	if sample_gt.count(alt) == 1:
+
+		return 'HET'
+
+	elif sample_gt.count(alt) == 2:
+
+		return 'HOM'
+
+	else:
+
+		return 'UNKNOWN'
+
+
+def fix_exon(df):
+
+	"""
+	Return a fixed version of the exon for display in excel
+
+	"""
+
+	exon = df['EXON']
+
+	if exon == None or exon == '':
+
+		return ''
+
+	else:
+
+		return exon.replace('/', '|')
+
+
+
+def fix_intron(df):
+
+	"""
+	Return a fixed version of the intron for display in excel
+
+	"""
+
+	intron = df['INTRON']
+
+	if intron == None or intron == '':
+
+		return ''
+
+	else:
+
+		return intron.replace('/', '|')
+
+
+
+def get_hgvsc(df):
+
+	"""
+	return formatted hgvsc
+
+	"""
+
+	hgvsc = df['HGVSc']
+
+	if hgvsc == None or hgvsc == '':
+
+		return ''
+
+	else:
+
+		return hgvsc.split(':')[1]
+
+
+def get_hgvsp(df):
+
+	"""
+	return formatted hgvsp
+
+	"""
+
+	hgvsp = df['HGVSp']
+
+	if hgvsp == None or hgvsp == '':
+
+		return ''
+
+	else:
+
+		return hgvsp.split(':')[1]
+
+
+def annotate_hpo(df, patient_hpos, hpo_dict):
+    
+    gene_id = df['Gene']
+    
+    counter = 0
+    
+    if gene_id in hpo_dict:
+        
+        for patient_hpo in set(patient_hpos):
+            
+            if patient_hpo in hpo_dict[gene_id]:
+                
+                counter = counter +1
+                
+    return counter
+
+
+
+
+
 
 
