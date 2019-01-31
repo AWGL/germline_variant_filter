@@ -6,7 +6,7 @@ import datetime
 
 def parse_config(yaml_file):
 	"""
-	Parse the yaml config file
+	Parse the yaml config file containing the preferences.
 
 	"""
 
@@ -23,9 +23,13 @@ def parse_ped_file(ped_file):
 	"""
 
 	ped_dict = {}
+
 	with open(ped_file) as csvfile:
+
 		spamreader = csv.reader(csvfile, delimiter='\t')
+
 		for row in spamreader:
+
 			ped_dict[row[1]] = {}
 			ped_dict[row[1]]['familyID'] = row[0]
 			ped_dict[row[1]]['paternalID'] = row[2]
@@ -39,9 +43,12 @@ def parse_ped_file(ped_file):
 
 def parse_panel_app_dump(panel_app_dump):
 	"""
-	Parse the local panelapp dump
+	Parse the local panelapp dump. This stores the data retrieved from the PanelApp API locally so \
+	we don't have to requery if the data was retrived within a certian time limit.
 	"""
+
 	panel_app_dict = {}
+
 	with open(panel_app_dump) as csvfile:
 
 		spamreader = csv.reader(csvfile, delimiter='\t')
@@ -61,6 +68,7 @@ def is_proband_in_trio(sample, ped_dict):
 	Is the sample a proband in a trio?
 
 	"""
+
 	if ped_dict[sample]['paternalID'] == '0':
 
 		return False
@@ -76,11 +84,12 @@ def select_variants_for_sample(df, sample, min_dp, min_gq):
 	"""
 	Checks whether the variant has not been filtered for that variant.
 	
-	checks if the sample is not reference for this variant.
+	Checks if the sample is not reference for this variant.
 	
 	if both of these are True then we return True
 	
 	else we return False
+
 	"""
 	
 	passes_filter = False
@@ -123,7 +132,6 @@ def fix_column_names(columns):
 
 	We need this for when we loop through the dataframe and put each VEP consequence on a seperate row.
 
-	
 	"""
 	
 	fixed_columns = []
@@ -170,6 +178,10 @@ def parse_csq(csq_string, csq_desc):
 		transcript_dict = {}
 		
 		vep_data = transcript.split('|')
+
+		if len(csq_desc) != len(vep_data):
+
+			raise Exception('VEP CSQ String Mismatch! Check the input CSQ description.')
 		
 		for key, value in zip(csq_desc, vep_data):
 			
@@ -202,7 +214,6 @@ def split_vep_transcripts(df, csq_desc, vep_fields, column_names):
 		transcript_list = parse_csq(csq, csq_desc)
 		
 		# Add the standard vcf columns
-
 		vcf_row = []
 		for data in variant:
 			
@@ -241,15 +252,15 @@ def get_variant_key(df):
 	Make a key for the variant.
 
 	"""
-
 	return f"{df['CHROM']}:{df['POS']}{df['REF']}>{df['ALT']}"
 
 def get_worst_consequence(consequences, consequence_severity):
 	"""
 	Of all the transcripts that a variant falls in what is the worst consequence.
 
+	Takes a list consequence_severity which has all consequences in order of severity
+
 	"""
-	
 	worst_index = 9999
 	
 	for consequence in consequences:
@@ -317,9 +328,11 @@ def has_important_clinsig(df, clin_sig_words):
 
 def fix_splice_ai(df, column):
 	"""
-	Split splice ai if there are more than one entry
+	Split SpliceAi result if there are more than one entry.
 	
-	return the one related to out gene of interest
+	Return the one related to our gene of interest.
+
+	Otherwise return the highest of the two.
 	
 	"""
 	
@@ -344,8 +357,7 @@ def fix_splice_ai(df, column):
 
 def has_affect_on_splicing(df, cutoff):
 	"""
-	Does a variant have an affect on splicing
-
+	Does a variant have an affect on splicing?
 
 	"""
 	
@@ -549,12 +561,9 @@ def parse_hpo_file(hpo_file):
 		
 		spamreader = csv.reader(csvfile, delimiter='\t' )
 		next(spamreader)
-		i =1
+
 		for row in spamreader:
-			i = 1 +1
-			if i >10:
-				break
-			
+
 			if row[0] not in hpo_dict:
 				
 				hpo_dict[row[0]] = {}
@@ -641,9 +650,8 @@ def fix_intron(df):
 
 
 def get_hgvsc(df):
-
 	"""
-	return formatted hgvsc
+	Return formatted hgvsc.
 
 	"""
 
@@ -659,9 +667,8 @@ def get_hgvsc(df):
 
 
 def get_hgvsp(df):
-
 	"""
-	return formatted hgvsp
+	Return formatted hgvsp
 
 	"""
 
@@ -677,20 +684,97 @@ def get_hgvsp(df):
 
 
 def annotate_hpo(df, patient_hpos, hpo_dict):
-    
-    gene_id = df['Gene']
-    
-    counter = 0
-    
-    if gene_id in hpo_dict:
-        
-        for patient_hpo in set(patient_hpos):
-            
-            if patient_hpo in hpo_dict[gene_id]:
-                
-                counter = counter +1
-                
-    return counter
+	"""
+	Add the count of the matching HPO terms.
+
+	"""
+
+	gene_id = df['Gene']
+
+	counter = 0
+
+	if gene_id in hpo_dict:
+		
+		for patient_hpo in set(patient_hpos):
+
+			if patient_hpo in hpo_dict[gene_id]:
+
+				counter = counter +1
+
+	return counter
+
+
+def check_picks(df, pick_dict):
+	"""
+	Check every sample has a pick flag.
+
+	If it doesn't then set all to 1.
+
+	"""
+
+	variant_id = df['VariantId']
+
+	if pick_dict['PICK'][variant_id] == 0:
+
+		return '1'
+
+	else:
+
+		return df['PICK']
+
+
+def are_arguments_valid(args, config_dict):
+
+	"""
+	Check whether the arguments and config make sense.
+
+	"""
+
+	if args.local_panel_app_dump != None and args.panelapp == False:
+
+		print ('Cannot select to use PanelApp dump and not select to add PanelApp Data.')
+		return False
+
+	if args.spliceai == True and 'SpliceAI' not in args.csq[0]:
+
+		print ('Input file does not contain the required annotations for the spliceai option.')
+		return False
+
+	if args.smart_synonymous == True and ('SpliceAI' not in args.csq[0] and 'CLIN_SIG' not in args.csq):
+
+		print ('Input file does not contain the required annotations for the smart-synonymous option.')
+		return False
+
+	if args.add_ccrs == True and 'ccrs' not in args.csq[0]:
+
+		print ('Input file does not contain the required annotations for the add-ccrs option.')
+		return False
+
+	if args.gnomad_constraint_scores == True and 'gnomad_gene_scores' not in config_dict:
+
+		print ('You need to add the location of the gnomad_gene_scores in the config file to use the gnomad-constraint-scores option.')
+		return False
+
+	if args.patient_hpos != None and 'hpo_file' not in config_dict:
+
+		print ('Cannot add patient HPO terms as we do not have a HPO gene map location specified in the config file.')
+		return False
+
+	return True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
