@@ -128,25 +128,31 @@ python germline_variant_filter.py --config config.yaml --ped pedigree.ped \
 
 - For samples which are in a trio annotate the workflow. This can be one of:
 
-	- COMPOUND_HET    
-	- DOMINANT_AUTOSOMAL
-	- DOMINANT_SEX
-	- RECESSIVE_AUTOSOMAL
-	- RECCESSIVE_SEX
-	- DENOVO_HC
-	- DENOVO_LC
-	- UNIPARENTAL_ISODISOMY
+- UNIPARENTAL\_ISODISOMY - Variant is on an Autosome and the genotype is Homozygous for the ALT allele and (the mother is Heterozygous and the father is Homozygous Reference OR  mother is Homozygous Reference and father is Heterozygous). Alternatively, Variant is on the X chromosome and the sample sex is Female and the genotype is Homozygous for the ALT allele and (the mother is Heterozygous and the father is Homozygous Reference OR mother is Homozygous Reference and father is homozygous for the ALT allele.) All samples must pass the minimum DP and GQ requirements set in the config file.
+- COMPOUND\_HET - The variant is either on an Autosome or (on the X chromosome and sample sex is Female) and the genotype is Heterozygous and there is more than one variant in the transcript.
+- MITOCHONDRIAL - Variant is on the MT chromosome.
+- RECCESSIVE\_X\_FEMALE - Variant is on the X chromosome and the genotype is Homozygous for the ALT allele and the sample sex is Female.
+- RECCESSIVE\_AUTOSOMAL - Variant is on an Autosome and the genotype is Homozygous for the ALT allele.
+- X\_LINKED_MALE - Variant is on the X chromosome and sample sex is Male.
+- Y\_LINKED_MALE - Variant is on the Y chromosome and sample sex is Male.
+- DOMINANT\_AUTOSOMAL - Variant is on an Autosome and genotype is Heterozygous.
+- DOMINANT\_X\_FEMALE - Variant is on the X chromosome and the sample sex is Female and the genotype is Heterozygous.
+- DENOVO_HC - Variant is in the proband and not in either of the parents. All samples pass mimimum DP and GQ requirements set in the config file.
+- DENOVO_LC - Variant is in the proband and not in either of the parents. Only proband sample needs to pass mimimum DP and GQ requirements set in the config file.
 
 
 #### Stage 4 B - Single
 
 - For samples which are by themselves annotate the workflow as:
 
-	- COMPOUND_HET    
-	- DOMINANT_AUTOSOMAL
-	- DOMINANT_SEX
-	- RECESSIVE_AUTOSOMAL
-	- RECCESSIVE_SEX
+- COMPOUND\_HET
+- MITOCHONDRIAL,
+- RECCESSIVE\_X\_FEMALE
+- RECCESSIVE\_AUTOSOMAL
+- X\_LINKED\_MALE
+- Y\_LINKED\_MALE
+- DOMINANT\_AUTOSOMAL
+- DOMINANT\_X\_FEMALE
 
 
 #### Stage 4 C
@@ -183,8 +189,8 @@ Add the Gnomad Constraint Score to the output. Requires the release\_2.1\_ht\_co
 
 ## Known Limitations
 
-- No handline of MT variants
 - No phasing of compound HETs
+- No taking into account pseudoautosomal regions (PARs) on X chromosomes.
 
 ## References
 

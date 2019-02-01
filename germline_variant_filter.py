@@ -136,32 +136,44 @@ hpo_file = config_dict['hpo_file']
 
 other_gnomadg = config_dict['other_gnomadg']
 other_gnomade = config_dict['other_gnomade']
+other_ac = config_dict['other_ac']
 
-comp_het_gnomadg = config_dict['comp_het_gnomadg']
-comp_het_gnomade =  config_dict['comp_het_gnomade']
+compound_het_gnomadg = config_dict['compound_het_gnomadg']
+compound_het_gnomade = config_dict['compound_het_gnomade']
 
-upi_gnomadg = config_dict['upi_gnomadg']
-upi_gnomade = config_dict['upi_gnomade']
+dom_autosomal_gnomadg = config_dict['dom_autosomal_gnomadg']
+dom_autosomal_gnomade = config_dict['dom_autosomal_gnomade']
+dom_autosomal_ac = config_dict['dom_autosomal_ac']
 
-rec_sex_gnomadg = config_dict['rec_sex_gnomadg']
-rec_sex_gnomade = config_dict['rec_sex_gnomade']
-rec_sex_ac = config_dict['rec_sex_ac']
+dom_x_female_gnomadg = config_dict['dom_x_female_gnomadg']
+dom_x_female_gnomade = config_dict['dom_x_female_gnomade']
+dom_x_female_ac = config_dict['dom_x_female_ac']
 
-rec_auto_gnomadg = config_dict['rec_auto_gnomadg']
-rec_auto_gnomade = config_dict['rec_auto_gnomade']
-rec_auto_ac = config_dict['rec_auto_ac']
+x_linked_male_gnomadg = config_dict['x_linked_male_gnomadg']
+x_linked_male_gnomade = config_dict['x_linked_male_gnomade']
+x_linked_male_ac = config_dict['x_linked_male_ac']
 
-dom_sex_gnomadg = config_dict['dom_sex_gnomadg']
-dom_sex_gnomade = config_dict['dom_sex_gnomade']
-dom_sex_ac = config_dict['dom_sex_ac']
+y_linked_male_gnomadg = config_dict['y_linked_male_gnomadg']
+y_linked_male_gnomade = config_dict['y_linked_male_gnomade']
+y_linked_male_ac = config_dict['y_linked_male_ac']
 
-dom_auto_gnomadg = config_dict['dom_auto_gnomadg']
-dom_auto_gnomade = config_dict['dom_auto_gnomade']
-dom_auto_ac = config_dict['dom_auto_ac']
+reccessive_autosomal_gnomadg = config_dict['reccessive_autosomal_gnomadg']
+reccessive_autosomal_gnomade = config_dict['reccessive_autosomal_gnomade']
+reccessive_autosomal_ac = config_dict['reccessive_autosomal_ac']
+
+reccessive_x_female_gnomadg = config_dict['reccessive_x_female_gnomadg']
+reccessive_x_female_gnomade = config_dict['reccessive_x_female_gnomade']
+reccessive_autosomal_ac = config_dict['reccessive_autosomal_ac']
+
+mito_gnomadg = config_dict['mito_gnomadg']
+mito_gnomade = config_dict['mito_gnomade']
 
 de_novo_gnomadg = config_dict['de_novo_gnomadg']
 de_novo_gnomade = config_dict['de_novo_gnomade']
 de_novo_ac = config_dict['de_novo_ac']
+
+upi_gnomadg = config_dict['upi_gnomadg']
+upi_gnomade = config_dict['upi_gnomade']
 
 final_fields_trio  =config_dict['final_fields_trio']
 final_fields_single  =config_dict['final_fields_single']
@@ -327,13 +339,13 @@ for sample in samples:
 
 		sample_sex = 'Male'
 
-	elif sample_sex == '1':
+	elif sample_sex == '2':
 
 		sample_sex = 'Female'
 
 	else:
 
-		sample_sex = '0'
+		sample_sex = 'Unknown'
 
 	# Get variants relevant to this sample
 	sample_df = vep_df[vep_df[f'sample_{sample}_is_relevant'] == True]
@@ -365,7 +377,7 @@ for sample in samples:
 
 
 	# Filter on least restrictive workflow
-	wf_restrictiveness = ['OTHER', 'UNIPARENTAL_ISODISOMY', 'COMPOUND_HET', 'RECCESSIVE_SEX', 'RECESSIVE_AUTOSOMAL', 'DOMINANT_SEX', 'DOMINANT_AUTOSOMAL', 'DENOVO_HC', 'DENOVO_LC' ]
+	wf_restrictiveness = config_dict['wf_restrictiveness']
 
 	workflows = list(sample_df['Workflow'].value_counts().index)
 
@@ -393,13 +405,14 @@ for sample in samples:
 		if wf_to_use == 'OTHER':
 			
 			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < other_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
-				   ((workflow_df['gnomADe_AF_POPMAX'] < other_gnomade) | (pd.isna(workflow_df['gnomADe_AF_POPMAX'])))
+				   ((workflow_df['gnomADe_AF_POPMAX'] < other_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
+				   (workflow_df['AC'] < other_ac)
 				   ]
 
 		elif wf_to_use == 'COMPOUND_HET':
 
-			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < comp_het_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
-				   ((workflow_df['gnomADe_AF_POPMAX'] < comp_het_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX'])))
+			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < compound_het_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
+				   ((workflow_df['gnomADe_AF_POPMAX'] < compound_het_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX'])))
 				   ]
 
 		elif wf_to_use == 'UNIPARENTAL_ISODISOMY':
@@ -408,31 +421,51 @@ for sample in samples:
 				   ((workflow_df['gnomADe_AF_POPMAX'] < upi_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX'])))
 				   ]
 
-		elif wf_to_use == 'RECCESSIVE_SEX':
+		elif wf_to_use == 'MITOCHONDRIAL':
+
+			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < mito_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
+				   ((workflow_df['gnomADe_AF_POPMAX'] < mito_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX'])))
+				   ]			   
+
+		elif wf_to_use == 'RECCESSIVE_X_FEMALE':
 			
-			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < rec_sex_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
-				   ((workflow_df['gnomADe_AF_POPMAX'] < rec_sex_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
-				   (workflow_df['AC'] < rec_sex_ac)
+			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < reccessive_x_female_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
+				   ((workflow_df['gnomADe_AF_POPMAX'] < reccessive_x_female_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
+				   (workflow_df['AC'] < reccessive_x_female_ac)
 				   ]
 			
-		elif wf_to_use == 'RECESSIVE_AUTOSOMAL':
+		elif wf_to_use == 'RECCESSIVE_AUTOSOMAL':
 			
-			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < rec_auto_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
-				   ((workflow_df['gnomADe_AF_POPMAX'] < rec_auto_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
-				   (workflow_df['AC'] < rec_auto_ac)
+			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < reccessive_autosomal_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
+				   ((workflow_df['gnomADe_AF_POPMAX'] < reccessive_autosomal_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
+				   (workflow_df['AC'] < reccessive_autosomal_ac)
 				   ]      
 		
-		elif wf_to_use == 'DOMINANT_SEX':
+		elif wf_to_use == 'X_LINKED_MALE':
 			
-			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < dom_sex_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
-				   ((workflow_df['gnomADe_AF_POPMAX'] < dom_sex_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
-				   (workflow_df['AC'] < dom_sex_ac)
+			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < x_linked_male_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
+				   ((workflow_df['gnomADe_AF_POPMAX'] < x_linked_male_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
+				   (workflow_df['AC'] < x_linked_male_ac)
 				   ]
+		elif wf_to_use == 'Y_LINKED_MALE':
+			
+			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < y_linked_male_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
+				   ((workflow_df['gnomADe_AF_POPMAX'] < y_linked_male_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
+				   (workflow_df['AC'] < y_linked_male_ac)
+				   ]
+
 		elif wf_to_use == 'DOMINANT_AUTOSOMAL':
 			
-			 workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < dom_auto_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
-				   ((workflow_df['gnomADe_AF_POPMAX'] < dom_auto_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
-				   (workflow_df['AC'] < dom_auto_ac)
+			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < dom_autosomal_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
+				   ((workflow_df['gnomADe_AF_POPMAX'] < dom_autosomal_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
+				   (workflow_df['AC'] < dom_autosomal_ac)
+				   ]
+
+		elif wf_to_use == 'DOMINANT_X_FEMALE':
+			
+			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < dom_x_female_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
+				   ((workflow_df['gnomADe_AF_POPMAX'] < dom_x_female_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
+				   (workflow_df['AC'] < dom_x_female_ac)
 				   ]
 
 		elif wf_to_use == 'DENOVO_HC' or wf_to_use == 'DENOVO_LC':
@@ -512,14 +545,14 @@ for sample in samples:
 	if proband_in_trio == True:
 
 		with open(f'{results_dir}/{sample}.csv', 'w') as f:
-			f.write(f'#Variant Germline Filter|Proband={sample}|father={father}|mother={mother}\n')
+			f.write(f'#Variant Germline Filter|Proband={sample}|father={father}|mother={mother}|proband_sex={sample_sex}\n')
 
 		master_sample_df[final_fields_trio].to_csv(f'{results_dir}/{sample}.csv', sep='\t', float_format='%.6f', mode='a', index=False)
 
 	else:
 
 		with open(f'results/{sample}.csv', 'w') as f:
-			f.write(f'#Variant Germline Filter|Proband={sample}\n')
+			f.write(f'#Variant Germline Filter|Proband={sample}|proband_sex={sample_sex}\n')
 
 		master_sample_df[final_fields_single].to_csv(f'{results_dir}/{sample}.csv', sep='\t', float_format='%.6f', mode='a', index=False)
 

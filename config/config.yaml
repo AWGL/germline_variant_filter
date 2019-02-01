@@ -56,32 +56,57 @@ min_parental_gq_uid: 20
 # Time in days if data in local panel app dump older than this then query API
 panel_app_dump_max_time: 100.0
 
+
+wf_restrictiveness: ['UNIPARENTAL_ISODISOMY', 'COMPOUND_HET', 'MITOCHONDRIAL', 'OTHER', 'RECCESSIVE_X_FEMALE', 'RECCESSIVE_AUTOSOMAL', 'X_LINKED_MALE', 'Y_LINKED_MALE','DOMINANT_AUTOSOMAL', 'DOMINANT_X_FEMALE' ,'DENOVO_HC', 'DENOVO_LC']
+
+
 # Allele Frequency cutoffs for the different workflows
 other_gnomadg: 0.01
 other_gnomade: 0.01
-
-comp_het_gnomadg: 0.01
-comp_het_gnomade: 0.01
+other_ac: 10
 
 upi_gnomadg: 0.01
 upi_gnomade: 0.01
 
-rec_sex_gnomadg: 0.01
-rec_sex_gnomade: 0.01
-rec_sex_ac: 8
+compound_het_gnomadg: 0.01
+compound_het_gnomade: 0.01
 
-rec_auto_gnomadg: 0.01
-rec_auto_gnomade: 0.01
-rec_auto_ac: 4
+mito_gnomadg: 0.01
+mito_gnomade: 0.01
 
-dom_sex_gnomadg: 0.0075
-dom_sex_gnomade: 0.001
-dom_sex_ac: 6
+reccessive_x_female_gnomadg: 0.01
+reccessive_x_female_gnomade: 0.01
+reccessive_x_female_ac: 8
 
-dom_auto_gnomadg: 0.0075
-dom_auto_gnomade: 0.001
-dom_auto_ac: 4
+reccessive_autosomal_gnomadg: 0.01
+reccessive_autosomal_gnomade: 0.01
+reccessive_autosomal_ac: 4
 
-de_novo_gnomadg: 0.0075
-de_novo_gnomade: 0.001
+x_linked_male_gnomadg: 0.001
+x_linked_male_gnomade: 0.0075
+x_linked_male_ac: 6
+
+y_linked_male_gnomadg: 0.001
+y_linked_male_gnomade: 0.0075
+y_linked_male_ac: 6
+
+dom_autosomal_gnomadg: 0.001
+dom_autosomal_gnomade: 0.0075
+dom_autosomal_ac: 4
+
+dom_x_female_gnomadg: 0.001
+dom_x_female_gnomade: 0.0075
+dom_x_female_ac: 4
+
+de_novo_gnomadg: 0.001
+de_novo_gnomade: 0.0075
 de_novo_ac: 4
+
+
+
+
+
+
+
+
+
