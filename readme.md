@@ -21,7 +21,7 @@ Install all dependencies using YAML config file.
 ## Test 
 
 
-`python -m test.tests`
+`python -m unittest test.tests`
 
 ## Run
 
@@ -76,6 +76,7 @@ There is a configuration file that is required to run the program. An example of
 #### Example
 
 ```
+# Get CSQ string descrbing VEP fields
 CSQ=$(grep "^##INFO=<ID=CSQ" input.norm.vep.vcf | awk 'BEGIN { FS = ":" } ; { print $2 }' | tr -d '>" ')
 
 python germline_variant_filter.py --config config.yaml --ped pedigree.ped \
@@ -170,7 +171,7 @@ python germline_variant_filter.py --config config.yaml --ped pedigree.ped \
 
 ### Smart Synonymous Filtering
 
-When this option is selected synoymous variants will be filtered out unless they are listed as being pathogenic in Clinvar or have a predicted affect on splicing over the threshold specified in the config file.
+When this option is selected synoymous variants will be filtered out unless they are listed as being pathogenic in Clinvar or have a predicted affect on splicing over the threshold specified in the config file. Synoymous variants with no availible splicing prediction will also be kept.
 
 ### Patient HPOs
 
@@ -181,7 +182,6 @@ Give the program a TSV file containing HPO terms for each patient. Annotate each
 Add the Gnomad Constraint Score to the output. Requires the release\_2.1\_ht\_constraint\_constraint\_refseq.txt which can be found on the cluster. https://gnomad.broadinstitute.org/downloads
 
 ## Help
-
 
 - The config file contains the final\_fields\_trio and final\_fields\_single variables these contain the fields which the final output TSV file should contain.
 

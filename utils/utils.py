@@ -707,7 +707,7 @@ def annotate_hpo(df, patient_hpos, hpo_dict):
 
 			if patient_hpo in hpo_dict[gene_id]:
 
-				counter = counter +1
+				counter = counter + 1
 
 	return counter
 
@@ -758,6 +758,11 @@ def are_arguments_valid(args, config_dict):
 		print ('Input file does not contain the required annotations for the add-ccrs option.')
 		return False
 
+	if args.add_ccrs == True and ('CCR_percentile' not in  config_dict['final_fields_trio'] or 'CCR_percentile' not in config_dict['final_fields_single']):
+
+		print ('CCR_percentile needs to be in the final fields variable in the config file if you select the add-ccrs option.')
+		return False	
+
 	if args.gnomad_constraint_scores == True and 'gnomad_gene_scores' not in config_dict:
 
 		print ('You need to add the location of the gnomad_gene_scores in the config file to use the gnomad-constraint-scores option.')
@@ -766,6 +771,11 @@ def are_arguments_valid(args, config_dict):
 	if args.patient_hpos != None and 'hpo_file' not in config_dict:
 
 		print ('Cannot add patient HPO terms as we do not have a HPO gene map location specified in the config file.')
+		return False
+
+	if args.patient_hpos != None and ('HPOCount' not in config_dict['final_fields_trio'] or 'HPOCount' not in config_dict['final_fields_single']) :
+
+		print ('Cannot add patient HPO terms and not put HPOCount in the final fields variable.')
 		return False
 
 	return True

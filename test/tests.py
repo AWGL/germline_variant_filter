@@ -25,7 +25,7 @@ class WorkFlowTrioTest(unittest.TestCase):
 		min_parental_depth_uid = 10
 		min_parental_gq_uid =10
 
-		df['Workflow'] = df.apply(annotate_workflow_trio, axis=1, args=(sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid))
+		df['Workflow'] = df.apply(annotate_workflow_trio, axis=1, args=(sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid, 'DP'))
 
 		for row in df.itertuples():
 
@@ -47,7 +47,7 @@ class WorkFlowTrioTest(unittest.TestCase):
 		min_parental_depth_uid = 10
 		min_parental_gq_uid =10
 
-		df['Workflow'] = df.apply(annotate_workflow_trio, axis=1, args=(sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid))
+		df['Workflow'] = df.apply(annotate_workflow_trio, axis=1, args=(sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid, 'DP'))
 
 		for row in df.itertuples():
 

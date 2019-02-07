@@ -10,6 +10,8 @@ import argparse
 # Set up Logger
 ########################################################################################################################################################
 
+version = '0.0.1'
+
 logger = logging.getLogger('germline_variant_filter')
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
@@ -399,7 +401,7 @@ for sample in samples:
 		# Get the least restrictive workflow if we have multiple annotations e.g DOMINANT_AUTOSOMAL|DENOVO_HC
 		workflow_list = workflow.split('|')
 		
-		least_restrictive_idx = 99999
+		least_restrictive_idx = 9999999
 		
 		for wf in workflow_list:
 			
@@ -547,19 +549,21 @@ for sample in samples:
 	master_sample_df['Intron'] = master_sample_df.apply(fix_intron, axis=1)
 	master_sample_df['HGVSc'] = master_sample_df.apply(get_hgvsc, axis=1)
 	master_sample_df['HGVSp'] = master_sample_df.apply(get_hgvsp, axis=1)
+
+	# Check every variant has at least one PICK flag
 	master_sample_df['Pick'] = master_sample_df.apply(check_picks, axis=1, args=(pick_dict,))
 
 	if proband_in_trio == True:
 
 		with open(f'{results_dir}/{sample}.csv', 'w') as f:
-			f.write(f'#Variant Germline Filter|Proband={sample}|father={father}|mother={mother}|proband_sex={sample_sex}\n')
+			f.write(f'#Variant Germline Filter Version {version}|Proband={sample}|father={father}|mother={mother}|proband_sex={sample_sex}\n')
 
 		master_sample_df[final_fields_trio].to_csv(f'{results_dir}/{sample}.csv', sep='\t', float_format='%.6f', mode='a', index=False)
 
 	else:
 
 		with open(f'results/{sample}.csv', 'w') as f:
-			f.write(f'#Variant Germline Filter|Proband={sample}|proband_sex={sample_sex}\n')
+			f.write(f'#Variant Germline Filter Version {version}|Proband={sample}|proband_sex={sample_sex}\n')
 
 		master_sample_df[final_fields_single].to_csv(f'{results_dir}/{sample}.csv', sep='\t', float_format='%.6f', mode='a', index=False)
 
