@@ -80,7 +80,7 @@ def is_proband_in_trio(sample, ped_dict):
 	return True
 
 
-def select_variants_for_sample(df, sample, min_dp, min_gq):
+def select_variants_for_sample(df, sample, min_dp, min_gq, gt_depth_tag):
 	"""
 	Checks whether the variant has not been filtered for that variant.
 	
@@ -113,7 +113,7 @@ def select_variants_for_sample(df, sample, min_dp, min_gq):
 		
 		is_variant = True
 		
-	if df[sample + '.GQ'] >= min_gq and df[sample + '.DP'] >= min_dp:
+	if df[sample + '.GQ'] >= min_gq and df[sample + '.' + gt_depth_tag] >= min_dp:
 		
 		passes_filter = True
 		
@@ -414,8 +414,14 @@ def fix_ccrs(df):
 		ccrs =ccrs.split('&')
 	
 		ccrs = [float(x) for x in ccrs]
+
+		try:
 	
-		return max(ccrs)
+			return max(ccrs)
+
+		except:
+
+			return None
 	
 	else:
 		
@@ -426,6 +432,8 @@ def fix_ccrs(df):
 		except:
 			
 			return None
+
+
 
 def annotate_with_gnomad_scores(df, gnomad_scores_dict, value):
 	"""
@@ -714,7 +722,7 @@ def check_picks(df, pick_dict):
 
 	variant_id = df['VariantId']
 
-	if pick_dict['PICK'][variant_id] == 0:
+	if pick_dict['PICK'][variant_id] != '1':
 
 		return '1'
 
@@ -740,9 +748,9 @@ def are_arguments_valid(args, config_dict):
 		print ('Input file does not contain the required annotations for the spliceai option.')
 		return False
 
-	if args.smart_synonymous == True and ('SpliceAI' not in args.csq[0] and 'CLIN_SIG' not in args.csq):
+	if args.smart_synonymous == True and (('SpliceAI' not in args.csq[0] and 'CLIN_SIG' not in args.csq) or args.spliceai ==False) :
 
-		print ('Input file does not contain the required annotations for the smart-synonymous option.')
+		print ('Input file does not contain the required annotations for the smart-synonymous option or you have not selected to parse the spliceAI columns.')
 		return False
 
 	if args.add_ccrs == True and 'ccrs' not in args.csq[0]:
@@ -762,6 +770,50 @@ def are_arguments_valid(args, config_dict):
 
 	return True
 
+
+def fix_gnomad(df, column):
+	"""
+	Fix gnomad columns when we have multiple hits.
+
+	return largest of the two.
+
+	"""
+	
+	gnomad =  df[column]
+	
+	# If we have blank or None return NOne
+	if gnomad == '.' or gnomad == None:
+		
+		return None
+	
+	# If for whatever reason we get two AFs
+	if '&' in gnomad:
+		
+		gnomad = gnomad.split('&')
+	
+		if '.' in gnomad:
+
+			gnomad = [x for x in gnomad if x != '.']
+
+		# If the list is empty after removing . 
+		if len(gnomad) == 0:
+
+			return None
+
+		gnomad = [float(x) for x in gnomad]
+		
+		# Else return the largest (as this is the max_Af field)
+		gnomad = max(gnomad)
+	
+	else:
+		
+		try:
+		
+			return float(gnomad)
+		
+		except:
+			
+			return None
 
 
 

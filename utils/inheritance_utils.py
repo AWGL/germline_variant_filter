@@ -31,7 +31,7 @@ def is_dominant_autosomal(chrom, ref, alt, sample_gt):
 
 	"""
 
-	if ref in sample_gt and alt in sample_gt and chrom not in ['X', 'Y', 'MT']:
+	if sample_gt.count(alt) ==1 and chrom not in ['X', 'Y', 'MT']:
 
 		return True
 
@@ -42,10 +42,10 @@ def is_dominant_autosomal(chrom, ref, alt, sample_gt):
 
 def is_dominant_x_female(chrom, ref, alt,sample_gt, sample_sex):
 	"""
-	Does the variant match a dominant/HET pattern and on the X chromosome?
+	Does the variant match a dominant/HET pattern and on the X chromosome in a female sample?
 	"""
 	
-	if ref in sample_gt and alt in sample_gt and chrom == 'X' and sample_sex == 'Female':
+	if sample_gt.count(alt) ==1 and chrom == 'X' and sample_sex == 'Female':
 		
 		return True
 	
@@ -195,7 +195,7 @@ def is_uniparental_isodisomy(chrom, ref, alt, sample_gt, mother_gt, father_gt, s
 	return False
 
 
-def annotate_workflow_trio(df, sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid):
+def annotate_workflow_trio(df, sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid, gt_depth_tag):
 	"""
 	For samples which are a trio add the workflow annotation to the dataframe.
 
@@ -209,8 +209,8 @@ def annotate_workflow_trio(df, sample, mother, father, sample_sex, compound_het_
 	sample_gt = df['sample_' + sample + '_GT']
 	mother_gt = df['sample_' + mother + '_GT']
 	father_gt = df['sample_' + father + '_GT']
-	mother_dp = df['sample_' + mother + '_DP']
-	father_dp = df['sample_' + father + '_DP']
+	mother_dp = df['sample_' + mother + '_' + gt_depth_tag]
+	father_dp = df['sample_' + father + '_' + gt_depth_tag]
 	mother_gq = df['sample_' + mother + '_GQ']
 	father_gq = df['sample_' + father + '_GQ']
 	transcript = df['Feature']

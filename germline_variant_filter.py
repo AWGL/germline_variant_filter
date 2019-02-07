@@ -74,7 +74,6 @@ args = parser.parse_args()
 config = args.config[0]
 ped_file = args.ped[0]
 csv_file = args.input[0]
-local_panel_app_dump = args.local_panel_app_dump[0]
 csq_desc = args.csq[0]
 csq_desc = csq_desc.split('|')
 parse_splice_ai = args.spliceai
@@ -87,6 +86,7 @@ results_dir = args.results_dir[0]
 
 if args.local_panel_app_dump != None:
 
+	local_panel_app_dump = args.local_panel_app_dump[0]
 	use_local_panel_app_dump = True
 
 else:
@@ -163,7 +163,7 @@ reccessive_autosomal_ac = config_dict['reccessive_autosomal_ac']
 
 reccessive_x_female_gnomadg = config_dict['reccessive_x_female_gnomadg']
 reccessive_x_female_gnomade = config_dict['reccessive_x_female_gnomade']
-reccessive_autosomal_ac = config_dict['reccessive_autosomal_ac']
+reccessive_x_female_ac = config_dict['reccessive_x_female_ac']
 
 mito_gnomadg = config_dict['mito_gnomadg']
 mito_gnomade = config_dict['mito_gnomade']
@@ -177,6 +177,8 @@ upi_gnomade = config_dict['upi_gnomade']
 
 final_fields_trio  =config_dict['final_fields_trio']
 final_fields_single  =config_dict['final_fields_single']
+
+gt_depth_tag = config_dict['gt_depth_tag']
 
 ########################################################################################################################################################
 # Load misc data
@@ -233,11 +235,11 @@ logger.info('Parsing CSV into dataframe.')
 df = pd.read_csv(csv_file, sep='\t', dtype={'CHROM': object})
 
 # Filter out variants that fail variant level QC
-df = df[df['FILTER'] == 'PASS']
+df = df[(df['FILTER'] == 'PASS') | (df['FILTER'] == '') | (pd.isna(df['FILTER']))]
 
 # For each sample in the PED file create a column which specifies whether the variant is relevant for that sample
 for sample in samples:
-	df[sample + '_is_relevant'] = df.apply(select_variants_for_sample, args=(sample,min_dp, min_gq), axis=1)
+	df[sample + '_is_relevant'] = df.apply(select_variants_for_sample, args=(sample,min_dp, min_gq, gt_depth_tag), axis=1)
 
 # Fix column names
 df.columns = fix_column_names(df.columns)
@@ -252,9 +254,12 @@ vep_df = split_vep_transcripts(df, csq_desc, vep_fields, list(df.columns))
 
 logger.info('Filtering on default filtering settings.')
 
-# Convert columns to numerical
+#Parse columns where we have two results e.g 0.001&0.3
+vep_df['gnomADg_AF_POPMAX'] = vep_df.apply(fix_gnomad, axis=1, args=('gnomADg_AF_POPMAX',))
+vep_df['gnomADe_AF_POPMAX'] = vep_df.apply(fix_gnomad, axis=1, args=('gnomADe_AF_POPMAX',))
 vep_df['gnomADg_AF_POPMAX'] = pd.to_numeric(vep_df['gnomADg_AF_POPMAX'])
 vep_df['gnomADe_AF_POPMAX'] = pd.to_numeric(vep_df['gnomADe_AF_POPMAX'])
+
 
 vep_df.fillna(value = {'gnomADg_AF_POPMAX':0.0, 'gnomADe_AF_POPMAX':0.0}, inplace=True)
 
@@ -334,6 +339,7 @@ for sample in samples:
 	if sample_sex == '0':
 
 		logger.warning(f'{sample}: sex is unknown - downstream calculations will assume patient is Male. We reccomend rerunning program when sex is known.')
+		sample_sex = 'Unknown'
 
 	elif sample_sex =='1':
 
@@ -345,6 +351,7 @@ for sample in samples:
 
 	else:
 
+		logger.warning(f'{sample}: sex is unknown - downstream calculations will assume patient is Male. We reccomend rerunning program when sex is known.')
 		sample_sex = 'Unknown'
 
 	# Get variants relevant to this sample
@@ -369,7 +376,7 @@ for sample in samples:
 		mother = ped_dict[sample]['maternalID']
 		father = ped_dict[sample]['paternalID']
 
-		sample_df['Workflow'] = sample_df.apply(annotate_workflow_trio, axis=1, args=(sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid))
+		sample_df['Workflow'] = sample_df.apply(annotate_workflow_trio, axis=1, args=(sample, mother, father, sample_sex, compound_het_dict, min_parental_depth_dn, min_parental_gq_dn, min_parental_depth_uid, min_parental_gq_uid, gt_depth_tag))
 
 	else:
 
