@@ -523,9 +523,12 @@ for sample in samples:
 		if sample in patient_hpos:
 
 			master_sample_df['HPOCount'] = master_sample_df.apply(annotate_hpo, axis=1,args=(patient_hpos[sample], hpo_dict))
+			master_sample_df['HPOCountMax'] = master_sample_df.groupby('VariantId')['HPOCount'].transform('max')
 
 		else:
+			
 			master_sample_df['HPOCount'] = 'NA'
+			master_sample_df['HPOCountMax'] = 'NA'
 			logger.warning(f'{sample}: Could not find any HPO terms for this sample in file.')
 
 
@@ -562,7 +565,7 @@ for sample in samples:
 
 	else:
 
-		with open(f'results/{sample}.csv', 'w') as f:
+		with open(f'{results_dir}/{sample}.csv', 'w') as f:
 			f.write(f'#Variant Germline Filter Version {version}|Proband={sample}|proband_sex={sample_sex}\n')
 
 		master_sample_df[final_fields_single].to_csv(f'{results_dir}/{sample}.csv', sep='\t', float_format='%.6f', mode='a', index=False)
