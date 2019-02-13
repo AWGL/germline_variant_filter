@@ -190,7 +190,6 @@ Add the Gnomad Constraint Score to the output. Requires the release\_2.1\_ht\_co
 ## Known Limitations
 
 - No phasing of compound HETs
-- No taking into account pseudoautosomal regions (PARs) on X chromosomes.
 
 ## References
 
