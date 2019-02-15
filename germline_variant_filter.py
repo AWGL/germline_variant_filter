@@ -134,7 +134,10 @@ min_parental_gq_uid = config_dict['min_parental_gq_uid']
 
 gnomad_gene_scores = config_dict['gnomad_gene_scores']
 panel_app_dump_max_time = config_dict['panel_app_dump_max_time']
-hpo_file = config_dict['hpo_file']
+
+if add_hpo == True:
+
+	hpo_file = config_dict['hpo_file']
 
 other_gnomadg = config_dict['other_gnomadg']
 other_gnomade = config_dict['other_gnomade']
@@ -541,6 +544,7 @@ for sample in samples:
 	master_sample_df['Genotype'] = master_sample_df.apply(get_genotype, axis=1, args=(sample,))
 	master_sample_df['Proband'] = master_sample_df['sample_' + sample + '_GT']
 
+	# Change column names if we have trio samples
 	if proband_in_trio == True:
 
 		master_sample_df['Father'] = master_sample_df['sample_' + father + '_GT']
