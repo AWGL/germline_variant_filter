@@ -466,11 +466,11 @@ def get_panel_app_info(gene):
 	url = f'https://panelapp.genomicsengland.co.uk/WebServices/search_genes/{gene}/?format=json&LevelOfConfidence=HighEvidence'
 	
 	try:
-		panel_response = requests.get(url)
+		panel_response = requests.get(url, timeout=5)
 
 		panel_data = panel_response.json()
 		
-		if panel_data['meta']['numOfResults'] ==0:
+		if panel_data['meta']['numOfResults'] == 0:
 		
 			return None, None
 	
