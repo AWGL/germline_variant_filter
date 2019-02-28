@@ -287,11 +287,11 @@ def annotate_workflow_trio(df, sample, mother, father, sample_sex, compound_het_
 
 	if is_high_confidence_de_novo(chrom, ref, alt, sample_gt, mother_gt, father_gt,mother_dp,father_dp,mother_gq,father_gq, min_parental_depth_dn, min_parental_gq_dn) == True:
 
-		workflows.append('DENOVO_HC')
+		workflows.append('DE_NOVO_HC')
 
 	elif is_low_confidence_de_novo(chrom, ref, alt, sample_gt, mother_gt, father_gt) == True:
 
-		workflows.append('DENOVO_LC')
+		workflows.append('DE_NOVO_LC')
 
 	if is_uniparental_isodisomy(chrom, ref, alt, sample_gt, mother_gt, father_gt, sample_sex, min_parental_depth_uid, min_parental_gq_uid, father_dp, mother_dp, father_gq, mother_gq) == True:
 
@@ -299,7 +299,7 @@ def annotate_workflow_trio(df, sample, mother, father, sample_sex, compound_het_
 
 
 	# If the variant does not fit in any then add other 
-	if len(workflows) == 0 or (len(workflows) ==1 and ('DENOVO_HC' in workflows or 'DENOVO_LC' in workflows)): 
+	if len(workflows) == 0 or (len(workflows) ==1 and ('DE_NOVO_HC' in workflows or 'DE_NOVO_LC' in workflows)): 
 
 		workflows.append('OTHER')
 
