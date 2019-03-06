@@ -371,3 +371,208 @@ def annotate_workflow_single(df,sample, sample_sex, compound_het_dict):
 
 	return '|'.join(workflows)
 
+
+
+def get_genuine_compound_hets(df):
+	"""
+	Find the phasable compound hets
+	"""
+	
+	# Get variants labelled as possible compound hets
+	comp_hets = df[df['Workflow'].str.contains('COMPOUND_HET')]
+	
+	# Create a compound het dict with the transcript as the key and each candidate compound het as a \
+	# value in a list
+	comp_het_dict = {}
+
+	for row in comp_hets.itertuples():
+	
+		if row.Transcript in comp_het_dict:
+	
+			comp_het_dict[row.Transcript].append([row.VariantId,row.Proband, row.Father, row.Mother ])
+		
+		else:
+		
+			comp_het_dict[row.Transcript] = [[row.VariantId, row.Proband, row.Father, row.Mother ]]
+			
+			
+	genuine_comp_hets = {}
+
+	# Now find the genuine compound hets
+	for key in comp_het_dict:
+
+		mum_hap_count = 0
+		dad_hap_count = 0
+		mum_hap_vars = []
+		dad_hap_vars = []
+
+		for het in comp_het_dict[key]:
+
+			alt = het[0].split('>')[1]
+
+			if '|' in het[2]:
+
+				father_gt = het[2].split('|')
+
+			elif '/' in het[2]:
+
+				father_gt = het[2].split('/')
+
+			if '|' in het[3]:
+
+				mother_gt = het[3].split('|')
+
+			elif '/' in het[3]:
+
+				mother_gt = het[3].split('/')
+
+			# If father is het and mum is hom ref
+			if (father_gt.count(alt) == 1 and mother_gt.count(alt) == 0):
+				
+				dad_hap_count = dad_hap_count + 1
+				dad_hap_vars.append(het[0])
+				
+			# If mum is het and dad is hom ref
+			elif mother_gt.count(alt) == 1 and father_gt.count(alt) == 0:
+
+				mum_hap_count = mum_hap_count + 1
+				mum_hap_vars.append(het[0])
+			
+			# If we have a variant both on the mum haplotype and the dad haplotype
+			if mum_hap_count>0 and dad_hap_count >0:
+				
+				# create a dict (genuine_comp_hets) with each genuine compound het as a key and value
+				for var in mum_hap_vars + dad_hap_vars:
+
+					genuine_comp_hets[var] = var
+			
+	return genuine_comp_hets
+
+
+def unaffected_parent_filter(df, genuine_comp_hets):
+	"""
+	Filter to be applied if both parents are unaffected in a trio and we assume 100% penetrance
+	
+	"""
+	
+	wf = df['Workflow'].split('|')
+	
+	alt = df['VariantId'].split('>')[1]
+	
+	if '|' in df['Father']:
+		
+		father_gt = df['Father'].split('|')
+		
+	elif '/' in df['Father']:
+		
+		father_gt = df['Father'].split('/')
+	
+	if '|' in df['Mother']:
+		
+		mother_gt = df['Mother'].split('|')
+		
+	elif '/' in df['Mother']:
+		
+		mother_gt = df['Mother'].split('/')
+	
+	# If we have a de novo then do not filter
+	if 'DENOVO_HC' in wf or 'DENOVO_LC' in wf:
+		
+		return False
+	
+	# Can't be dominant as parent would be affected if they have the allele
+	if 'DOMINANT_AUTOSOMAL' in wf and len(wf) == 1:
+		
+		return True
+	
+	# Filter out reccessive variants where one or both of the parents are hom alt
+	elif 'RECCESSIVE_AUTOSOMAL' in wf and len(wf) == 1:
+		
+		if father_gt.count(alt) ==2:
+			
+			return True
+		
+		elif mother_gt.count(alt) ==2:
+			
+			return True
+		
+		else:
+			
+			return False
+	
+	# Filter out x linked in makes if the mother is hom alt or father is either hom or het alt
+	elif 'X_LINKED_MALE' in wf and len(wf) == 1:
+		
+		if mother_gt.count(alt) ==2:
+			
+			return True
+		
+		elif father_gt.count(alt) > 0:
+			
+			return True
+		
+		else:
+			
+			return False
+		
+	# These cannot be causitive if we have unaffected parents
+	elif 'DOMINANT_X_FEMALE' in wf and len(wf) ==1:
+		
+		return True
+	
+	elif 'RECCESSIVE_X_FEMALE' in wf and len(wf) ==1:
+		
+		return True
+	
+	# If the variant is a genuine comp het
+	elif 'COMPOUND_HET' in wf:
+		
+		if df['VariantId'] in genuine_comp_hets:
+		
+			return False
+		
+		else:
+			
+			return True
+		
+	# anything else then don't filter
+	return False
+
+
+def fix_compound_hets(df, genuine_comp_hets):
+	"""
+	Remove the COMPOUND_HET annotation from the Workflow column if the variant is not a true compound het
+	
+	"""
+	
+	if 'COMPOUND_HET' in df['Workflow'] and df['VariantId'] not in genuine_comp_hets:
+		
+		
+		new_wf =  df['Workflow'].split('|')
+		new_wf.remove('COMPOUND_HET')
+		return '|'.join(new_wf)
+	
+	else:
+		
+		return df['Workflow']
+
+def apply_unaffected_parent_filter(df):
+	"""
+	Apply all unaffected filter functions
+
+	"""
+	
+	# Get genuine comp hets
+	genuine_comp_hets = get_genuine_compound_hets(df)
+	
+	# Apply filter function
+	df['unaffected_filter'] = df.apply(unaffected_parent_filter ,axis=1, args=(genuine_comp_hets,))
+	
+	# Remove comp het annotation from non genuine
+	df['Workflow'] = df.apply(fix_compound_hets, axis=1, args=(genuine_comp_hets,))
+
+	df = df[df['unaffected_filter'] ==False]
+	
+	return df
+
+

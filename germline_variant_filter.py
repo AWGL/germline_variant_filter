@@ -71,6 +71,9 @@ parser.add_argument('--worksheet', type=str, nargs=1, required =True,
 parser.add_argument('--results-dir', type=str, nargs=1, required =True,
 					help='Where to put the results.')
 
+parser.add_argument('--unaffected-parent-filter', action='store_true',
+					help='Apply the unaffected parent filter function. EXPERIMENTAL')
+
 args = parser.parse_args()
 
 config = args.config[0]
@@ -85,6 +88,8 @@ add_gnomad_constaint_scores = args.gnomad_constraint_scores
 add_panel_app_info = args.panelapp
 worksheet = args.worksheet[0]
 results_dir = args.results_dir[0]
+unaffected_parent_filter = args.unaffected_parent_filter
+
 
 if args.local_panel_app_dump != None:
 
@@ -315,7 +320,7 @@ vep_df['consequence_filter'] = vep_df.apply(consequence_filter, axis=1, args=(to
 
 if smart_synonymous_filtering == True:
 
-	vep_df = vep_df[(vep_df['consequence_filter'] == False) | ((vep_df['WorstConsequence'] == 'synonymous_variant') & ((vep_df['has_important_clinsig'] == True) | (vep_df['has_affect_on_splicing'] == True))) ]
+	vep_df = vep_df[(vep_df['consequence_filter'] == False) | ((vep_df['WorstConsequence'] == 'synonymous_variant') & ((vep_df['has_important_clinsig'] == True) | (vep_df['any_has_splicing_affect'] == True))) ]
 
 else:
 
@@ -480,7 +485,7 @@ for sample in samples:
 				   (workflow_df['AC'] < dom_x_female_ac)
 				   ]
 
-		elif wf_to_use == 'DENOVO_HC' or wf_to_use == 'DENOVO_LC':
+		elif wf_to_use == 'DE_NOVO_HC' or wf_to_use == 'DE_NOVO_LC':
 
 			workflow_df = workflow_df[((workflow_df['gnomADg_AF_POPMAX'] < de_novo_gnomadg) | (pd.isna(workflow_df['gnomADg_AF_POPMAX']) )) &
 				   ((workflow_df['gnomADe_AF_POPMAX'] < de_novo_gnomade ) | (pd.isna(workflow_df['gnomADe_AF_POPMAX']))) &
@@ -556,6 +561,12 @@ for sample in samples:
 	master_sample_df['Intron'] = master_sample_df.apply(fix_intron, axis=1)
 	master_sample_df['HGVSc'] = master_sample_df.apply(get_hgvsc, axis=1)
 	master_sample_df['HGVSp'] = master_sample_df.apply(get_hgvsp, axis=1)
+
+	if proband_in_trio == True and unaffected_parent_filter == True:
+
+		logger.info('Applying unaffected parent filter - EXPERIENTAL - if one or more of the parents are unaffected we will get errors!')
+
+		master_sample_df = apply_unaffected_parent_filter(master_sample_df)
 
 	# Check every variant has at least one PICK flag
 	master_sample_df['Pick'] = master_sample_df.apply(check_picks, axis=1, args=(pick_dict,))
