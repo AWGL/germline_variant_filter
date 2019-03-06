@@ -564,7 +564,7 @@ for sample in samples:
 
 	if proband_in_trio == True and unaffected_parent_filter == True:
 
-		logger.info('Applying unaffected parent filter - EXPERIENTAL - if one or more of the parents are unaffected we will get errors!')
+		logger.info('Applying unaffected parent filter - EXPERIENTIAL - if one or more of the parents are unaffected we will get errors!')
 
 		master_sample_df = apply_unaffected_parent_filter(master_sample_df)
 
