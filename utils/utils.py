@@ -140,7 +140,7 @@ def fix_column_names(columns):
 		
 		fixed_column_name = column_name.replace('.', '_').replace('-', '_')
 		
-		if fixed_column_name not in ['CHROM', 'POS', 'REF', 'ALT','ID','CSQ', 'QUAL', 'AC', 'TYPE','FILTER']:
+		if fixed_column_name not in ['CHROM', 'POS', 'REF', 'ALT','ID','CSQ', 'QUAL', 'AC', 'TYPE','FILTER', 'OLD_CLUMPED']:
 			
 			fixed_column_name = 'sample_' + fixed_column_name
 		
