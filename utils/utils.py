@@ -863,6 +863,7 @@ def add_to_db(df, db_path):
 
 	return None
 
+
 def get_db_frequencies(db_path):
 	"""
 	Given a path to the in house database return a dict with the count of how \
@@ -873,21 +874,19 @@ def get_db_frequencies(db_path):
 	conn = sqlite3.connect(db_path)
 	
 	c = conn.cursor()
-
-	c.execute('create table if not exists Variants (sample_id text, run_id text, variant text, gt text)')
 	
 	c.execute("SELECT * FROM Variants")
 	
 	all_variants = c.fetchall()
 	
 	var_df = pd.DataFrame(all_variants, columns=['sample_id', 'run_id', 'variant', 'gt'])
-
-	freq_dict = var_df.groupby('variant').count()['sample_id'].to_dict()
 	
 	conn.commit()
 	conn.close()
 	
-	return freq_dict
+	var_sample_dict = var_df.groupby('variant')['sample_id'].apply(lambda x: "|".join(x)).to_dict()
+
+	return var_sample_dict
 	
 
 def add_in_house_count(df, freq_dict):
@@ -897,7 +896,19 @@ def add_in_house_count(df, freq_dict):
 	
 	if df['VariantId'] in freq_dict:
 		
-		return freq_dict[df['VariantId']]
+		
+		samples = freq_dict[df['VariantId']].split('|')
+				
+		if df['SampleId'] in samples:
+			
+			samples.remove(df['SampleId'])
+						
+		else:
+			
+			samples = samples
+			
+		return len(samples)
+			
 	
 	else:
 		
