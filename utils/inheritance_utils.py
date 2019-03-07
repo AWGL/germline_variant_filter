@@ -405,6 +405,9 @@ def get_genuine_compound_hets(df):
 		dad_hap_count = 0
 		mum_hap_vars = []
 		dad_hap_vars = []
+		
+		unphased_count = 0
+		unphased_vars = []
 
 		for het in comp_het_dict[key]:
 
@@ -438,13 +441,27 @@ def get_genuine_compound_hets(df):
 				mum_hap_count = mum_hap_count + 1
 				mum_hap_vars.append(het[0])
 			
-			# If we have a variant both on the mum haplotype and the dad haplotype
-			if mum_hap_count>0 and dad_hap_count >0:
+			# If both parental genotypes are missing then add to unphased set
+			elif mother_gt.count('.') == 2 and father_gt.count('.') == 2:
 				
-				# create a dict (genuine_comp_hets) with each genuine compound het as a key and value
-				for var in mum_hap_vars + dad_hap_vars:
+				unphased_count = unphased_count +1
+				unphased_vars.append(het[0])
+			   
+				
+		# If we have a variant both on the mum haplotype and the dad haplotype
+		if mum_hap_count >0 and dad_hap_count >0:
+				
+			# create a dict (genuine_comp_hets) with each genuine compound het as a key and value
+			for var in mum_hap_vars + dad_hap_vars:
 
-					genuine_comp_hets[var] = var
+				genuine_comp_hets[var] = var
+		
+		# If we have more than one unphased
+		elif unphased_count > 1:
+			
+			for var in unphased_vars:
+
+				genuine_comp_hets[var] = var 
 			
 	return genuine_comp_hets
 

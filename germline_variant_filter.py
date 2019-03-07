@@ -74,6 +74,9 @@ parser.add_argument('--results-dir', type=str, nargs=1, required =True,
 parser.add_argument('--unaffected-parent-filter', action='store_true',
 					help='Apply the unaffected parent filter function. EXPERIMENTAL')
 
+parser.add_argument('--add-to-db', type=str, nargs=1,
+					help='Add in house count and annotate with in house count. EXPERIMENTAL. For GEL data only. Path of location to db')
+
 args = parser.parse_args()
 
 config = args.config[0]
@@ -89,7 +92,15 @@ add_panel_app_info = args.panelapp
 worksheet = args.worksheet[0]
 results_dir = args.results_dir[0]
 unaffected_parent_filter = args.unaffected_parent_filter
+in_house_freq_db = args.add_to_db
 
+if in_house_freq_db != None:
+
+	in_house_freq_db = in_house_freq_db[0]
+	use_in_house_freq_db = True
+else:
+
+	use_in_house_freq_db = False
 
 if args.local_panel_app_dump != None:
 
@@ -561,6 +572,17 @@ for sample in samples:
 	master_sample_df['Intron'] = master_sample_df.apply(fix_intron, axis=1)
 	master_sample_df['HGVSc'] = master_sample_df.apply(get_hgvsc, axis=1)
 	master_sample_df['HGVSp'] = master_sample_df.apply(get_hgvsp, axis=1)
+
+
+	# For the proband add the data to the database
+	if use_in_house_freq_db == True and proband_in_trio == True:
+
+		grouped_freq_df = master_sample_df.groupby(['SampleId', 'RunId', 'VariantId', 'Genotype']).count()
+		grouped_freq_df = grouped_freq_df.reset_index()
+
+		freq_dict = get_db_frequencies(in_house_freq_db)
+		master_sample_df['InHouseCount'] = master_sample_df.apply(add_in_house_count, axis=1, args=(freq_dict,))
+		add_to_db(grouped_freq_df, in_house_freq_db)
 
 	if proband_in_trio == True and unaffected_parent_filter == True:
 

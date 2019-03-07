@@ -3,6 +3,7 @@ import csv
 import pandas as pd
 import requests
 import datetime
+import sqlite3
 
 def parse_config(yaml_file):
 	"""
@@ -827,9 +828,80 @@ def fix_gnomad(df, column):
 
 
 
+def add_to_db(df, db_path):
+	"""
+	Add variants to in house database
+	"""
 
+	conn = sqlite3.connect(db_path)
+	c = conn.cursor()
 
+	# Create table if it does not exist
+	c.execute('create table if not exists Variants (sample_id text, run_id text, variant text, gt text)')
 
+	# Add each variant
+	for row in df.itertuples():
+		
+		sample_id = row.SampleId
+		run_id = row.RunId
+		variant = row.VariantId
+		gt = row.Genotype
+		
+		data = (sample_id, run_id, variant, gt)
+		
+		# Check whether the variant is already in for this sample
+		c.execute("SELECT * FROM Variants WHERE sample_id = ? AND variant = ?", (data[0], data[2]))
+		my_variant =  c.fetchall()
+
+		# If not add the variant
+		if len(my_variant) == 0:
+		
+			c.execute("INSERT INTO Variants VALUES (?,?,?,?)", data)
+		
+	conn.commit()
+	conn.close()
+
+	return None
+
+def get_db_frequencies(db_path):
+	"""
+	Given a path to the in house database return a dict with the count of how \
+	many samples we have seen that variant in
+
+	"""
+	
+	conn = sqlite3.connect(db_path)
+	
+	c = conn.cursor()
+
+	c.execute('create table if not exists Variants (sample_id text, run_id text, variant text, gt text)')
+	
+	c.execute("SELECT * FROM Variants")
+	
+	all_variants = c.fetchall()
+	
+	var_df = pd.DataFrame(all_variants, columns=['sample_id', 'run_id', 'variant', 'gt'])
+
+	freq_dict = var_df.groupby('variant').count()['sample_id'].to_dict()
+	
+	conn.commit()
+	conn.close()
+	
+	return freq_dict
+	
+
+def add_in_house_count(df, freq_dict):
+	"""
+	Add how many times we have seen this variant in our own patients
+	"""
+	
+	if df['VariantId'] in freq_dict:
+		
+		return freq_dict[df['VariantId']]
+	
+	else:
+		
+		return 0
 
 
 
